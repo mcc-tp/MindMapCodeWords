@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<title>Mind Map Teacher</title>
+
+<link rel="stylesheet" href="style.css">
+
+<script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+
+</head>
+
+<body>
+
+<h1>Mind Map Teacher Dashboard</h1>
+
+<div class="panel">
+
+Topic
+
+<br>
+
+<input id="topic">
+
+<br><br>
+
+Codeword 1<br>
+<input id="c1">
+
+<br>
+
+Codeword 2<br>
+<input id="c2">
+
+<br>
+
+Codeword 3<br>
+<input id="c3">
+
+<br><br>
+
+<button onclick="createSession()">Create Session</button>
+
+<h2 id="sessionCode"></h2>
+
+</div>
+
+<div id="network"></div>
+
+<script type="module">
+
+import { db } from "./firebase.js";
+
+import {
+doc,
+setDoc,
+collection,
+onSnapshot
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+let sessionID="";
+
+const nodes=new vis.DataSet([]);
+
+const edges=new vis.DataSet([]);
+
+const network=new vis.Network(
+document.getElementById("network"),
+{nodes,edges},
+{}
+);
+
+let topicNode=null;
+
+function randomCode(){
+
+return Math.random().toString(36).substring(2,6).toUpperCase();
+
+}
+
+window.createSession=async function(){
+
+sessionID=randomCode();
+
+let topic=document.getElementById("topic").value;
+
+let codewords=[
+document.getElementById("c1").value.toLowerCase(),
+document.getElementById("c2").value.toLowerCase(),
+document.getElementById("c3").value.toLowerCase()
+];
+
+await setDoc(doc(db,"sessions",sessionID),{
+
+topic:topic,
+codewords:codewords
+
+});
+
+document.getElementById("sessionCode").innerText="Session Code: "+sessionID;
+
+nodes.clear();
+edges.clear();
+
+topicNode="topic";
+
+nodes.add({
+id:"topic",
+label:topic,
+color:"#ffcc00"
+});
+
+listen();
+
+};
+
+function listen(){
+
+onSnapshot(collection(db,"sessions",sessionID,"guesses"),snapshot=>{
+
+snapshot.forEach(d=>{
+
+let word=d.id;
+let data=d.data();
+
+let label=word+" ("+data.count+")";
+
+if(data.winner){
+
+label="⭐ "+label+" "+data.firstPlayer;
+
+}
+
+if(!nodes.get(word)){
+
+nodes.add({id:word,label:label});
+
+edges.add({from:"topic",to:word});
+
+}else{
+
+nodes.update({id:word,label:label});
+
+}
+
+});
+
+});
+
+}
+
+</script>
+
+</body>
+</html>
