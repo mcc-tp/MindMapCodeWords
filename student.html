@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<title>Mind Map Student</title>
+
+<link rel="stylesheet" href="style.css">
+
+</head>
+
+<body>
+
+<h1>Submit Words</h1>
+
+Name
+
+<br>
+
+<input id="name">
+
+<br><br>
+
+Session Code
+
+<br>
+
+<input id="session">
+
+<br><br>
+
+<button onclick="join()">Join</button>
+
+<hr>
+
+<input id="guess" placeholder="Enter word">
+
+<button onclick="submitGuess()">Submit Guess</button>
+
+<p id="remaining"></p>
+
+<h3>Your guesses</h3>
+
+<ul id="myGuesses"></ul>
+
+<script type="module">
+
+import { db } from "./firebase.js";
+
+import {
+doc,
+getDoc,
+setDoc,
+runTransaction
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+let guesses=3;
+
+let sessionID="";
+
+let name="";
+
+let myWords=[];
+
+window.join=async function(){
+
+sessionID=document.getElementById("session").value.toUpperCase();
+
+name=document.getElementById("name").value;
+
+let snap=await getDoc(doc(db,"sessions",sessionID));
+
+if(!snap.exists()){
+
+alert("Session not found");
+return;
+
+}
+
+document.getElementById("remaining").innerText="Guesses left: 3";
+
+};
+
+window.submitGuess=async function(){
+
+if(guesses<=0)return;
+
+let word=document.getElementById("guess").value.toLowerCase();
+
+const ref=doc(db,"sessions",sessionID,"guesses",word);
+
+await runTransaction(db,async(transaction)=>{
+
+let snap=await transaction.get(ref);
+
+if(!snap.exists()){
+
+transaction.set(ref,{
+count:1,
+firstPlayer:name,
+winner:false
+});
+
+}else{
+
+transaction.update(ref,{
+count:snap.data().count+1
+});
+
+}
+
+});
+
+guesses--;
+
+myWords.push(word);
+
+updateList();
+
+document.getElementById("remaining").innerText="Guesses left: "+guesses;
+
+};
+
+function updateList(){
+
+let list=document.getElementById("myGuesses");
+
+list.innerHTML="";
+
+myWords.forEach(w=>{
+
+let li=document.createElement("li");
+
+li.innerText=w;
+
+list.appendChild(li);
+
+});
+
+}
+
+</script>
+
+</body>
+</html>
