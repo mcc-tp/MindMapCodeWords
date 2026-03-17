@@ -94,7 +94,10 @@ document.getElementById("c3").value.toLowerCase()
 await setDoc(doc(db,"sessions",sessionID),{
 
 topic:topic,
-codewords:codewords
+codewords:codewords,
+revealed:false
+
+});
 
 });
 
@@ -149,7 +152,17 @@ nodes.update({id:word,label:label});
 });
 
 }
+let revealed=false;
 
+window.toggleReveal = async function(){
+
+revealed=!revealed;
+
+await updateDoc(doc(db,"sessions",sessionID),{
+revealed:revealed
+});
+
+}
 </script>
 
 </body>
